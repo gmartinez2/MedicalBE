@@ -118,4 +118,4 @@ Files stored on disk under `Storage:ImagesPath` (default `./uploads`), never in 
 ## Dashboard
 
 - `GET /dashboard/summary` → `{ patients, doctorsOnShiftNow, shiftsToday, activePaymentPlans, outstandingBalance, lowStockMedications, recentVitalAlerts: VitalSignDto[] (with patientName) }`
-  (`recentVitalAlerts` items add `patientName`.)
+  (`recentVitalAlerts` items add `patientName`; the list is always empty for callers without a clinical role — Admin, Doctor or Nurse.)

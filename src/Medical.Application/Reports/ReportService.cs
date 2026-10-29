@@ -43,7 +43,8 @@ public interface IReportService
 {
     Task<IReadOnlyList<MedicalHistoryReportDto>> MedicalHistoryAsync(string? patientName, CancellationToken ct);
     Task<BalanceReportDto> BalancesAsync(string? patientName, bool onlyWithBalance, CancellationToken ct);
-    Task<DashboardSummaryDto> DashboardAsync(CancellationToken ct);
+    /// <param name="includeVitalAlerts">False for non-clinical callers; alerts then come back empty.</param>
+    Task<DashboardSummaryDto> DashboardAsync(bool includeVitalAlerts, CancellationToken ct);
 }
 
 public sealed class ReportService(IAppDbContext db, TimeProvider clock) : IReportService
@@ -152,7 +153,7 @@ public sealed class ReportService(IAppDbContext db, TimeProvider clock) : IRepor
     }
 
     /// <summary>"Today" is the current UTC calendar day.</summary>
-    public async Task<DashboardSummaryDto> DashboardAsync(CancellationToken ct)
+    public async Task<DashboardSummaryDto> DashboardAsync(bool includeVitalAlerts, CancellationToken ct)
     {
         var now = clock.GetUtcNow().UtcDateTime;
         var dayStart = now.Date;
@@ -171,6 +172,9 @@ public sealed class ReportService(IAppDbContext db, TimeProvider clock) : IRepor
             .SumAsync(x => (decimal?)x.Amount, ct) ?? 0m;
 
         var lowStock = await db.Medications.CountAsync(MedicationDto.LowStock, ct);
+
+        if (!includeVitalAlerts)
+            return new DashboardSummaryDto(patients, doctorsOnShift, shiftsToday, activePlans, financed - paid, lowStock, []);
 
         var alerts = await db.VitalSigns.AsNoTracking()
             .Where(VitalSignService.IsAbnormal)

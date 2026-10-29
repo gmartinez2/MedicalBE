@@ -4,6 +4,7 @@ using Medical.Application.Common;
 using Medical.Application.Doctors;
 using Medical.Application.Medications;
 using Medical.Application.Reports;
+using Medical.Application.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -191,8 +192,15 @@ public sealed class ReportsController(IReportService reports) : ControllerBase
 [Produces("application/json")]
 public sealed class DashboardController(IReportService reports) : ControllerBase
 {
-    /// <summary>Headline counters and the 10 most recent abnormal vital signs.</summary>
+    /// <summary>
+    /// Headline counters and the 10 most recent abnormal vital signs. Vital alerts are clinical data,
+    /// so they come back empty for callers without a clinical role (Admin, Doctor, Nurse).
+    /// </summary>
     [HttpGet("summary")]
     [Authorize(Policy = Policies.AnyStaff)]
-    public Task<DashboardSummaryDto> Summary(CancellationToken ct) => reports.DashboardAsync(ct);
+    public Task<DashboardSummaryDto> Summary(CancellationToken ct)
+    {
+        var isClinical = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Doctor) || User.IsInRole(Roles.Nurse);
+        return reports.DashboardAsync(isClinical, ct);
+    }
 }
