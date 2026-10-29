@@ -83,7 +83,7 @@ Key schema decisions:
 - All `DateTime` values are UTC (a value converter restores `DateTimeKind.Utc` on read).
 - Patients are soft-deleted (`IsDeleted` + global query filter); their records, vitals, images and plans are hidden with them.
   `DocumentId` is unique among non-deleted patients (filtered unique index).
-- Deleting a doctor cascades their shifts and nulls their references in clinical history.
+- Deleting a doctor who still has shifts is rejected with 409; otherwise their references in clinical history are nulled.
 - `PaymentPlans.RowVersion` guards concurrent payments against the same balance (loser gets 409).
 
 ## Behavior notes

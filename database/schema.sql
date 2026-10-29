@@ -642,3 +642,32 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261029224106_RestrictDoctorShiftDelete'
+)
+BEGIN
+    ALTER TABLE [Shifts] DROP CONSTRAINT [FK_Shifts_Doctors_DoctorId];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261029224106_RestrictDoctorShiftDelete'
+)
+BEGIN
+    ALTER TABLE [Shifts] ADD CONSTRAINT [FK_Shifts_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [Doctors] ([Id]) ON DELETE NO ACTION;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261029224106_RestrictDoctorShiftDelete'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261029224106_RestrictDoctorShiftDelete', N'10.0.14');
+END;
+
+COMMIT;
+GO
+

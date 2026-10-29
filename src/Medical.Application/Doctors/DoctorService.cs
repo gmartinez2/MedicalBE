@@ -60,6 +60,8 @@ public sealed class DoctorService(IAppDbContext db) : IDoctorService
 {
     private const string NotFoundMessage = "Médico no encontrado.";
     private const string DuplicateLicenseMessage = "Ya existe un médico con ese número de colegiado.";
+    private const string HasShiftsMessage =
+        "No se puede eliminar el médico porque tiene turnos asignados. Elimine o reasigne sus turnos primero.";
 
     public Task<PagedResult<DoctorDto>> ListAsync(PageQuery query, CancellationToken ct)
     {
@@ -108,11 +110,15 @@ public sealed class DoctorService(IAppDbContext db) : IDoctorService
     }
 
     /// <summary>
-    /// Hard delete. Shifts cascade in the database; clinical references (records, diagnoses,
-    /// treatments) are nulled by the FK's ON DELETE SET NULL so history is preserved.
+    /// Hard delete. Rejected with a 409 while the doctor still has shifts (the FK is RESTRICT);
+    /// clinical references (records, diagnoses, treatments) are nulled by the FK's ON DELETE SET NULL
+    /// so history is preserved.
     /// </summary>
     public async Task DeleteAsync(int id, CancellationToken ct)
     {
+        if (await db.Shifts.AnyAsync(s => s.DoctorId == id, ct))
+            throw new ConflictException(HasShiftsMessage);
+
         var affected = await db.Doctors.Where(d => d.Id == id).ExecuteDeleteAsync(ct);
         if (affected == 0) throw new NotFoundException(NotFoundMessage);
     }

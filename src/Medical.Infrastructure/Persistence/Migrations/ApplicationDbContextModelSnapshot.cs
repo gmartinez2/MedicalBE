@@ -989,7 +989,7 @@ namespace Medical.Infrastructure.Persistence.Migrations
                     b.HasOne("Medical.Domain.Entities.Doctor", "Doctor")
                         .WithMany("Shifts")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Doctor");

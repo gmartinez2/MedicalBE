@@ -7,7 +7,8 @@ namespace Medical.Infrastructure.Persistence.Configurations;
 
 // Delete-behavior rules (SQL Server rejects multiple cascade paths):
 //  * Patient → children: NO ACTION. Patients are soft-deleted, never physically removed.
-//  * Doctor → records/diagnoses/treatments: SET NULL (history survives); Doctor → shifts: CASCADE.
+//  * Doctor → records/diagnoses/treatments: SET NULL (history survives); Doctor → shifts: RESTRICT
+//    (DoctorService rejects deleting a doctor who still has shifts with a 409).
 //  * Diagnosis/Medication → treatments: NO ACTION in DB; services null the FK before deleting.
 //  * PaymentPlan → payments: CASCADE.
 // Children of a patient share the patient's soft-delete filter so a deleted patient's data disappears everywhere.
@@ -135,7 +136,7 @@ internal sealed class ShiftConfiguration : IEntityTypeConfiguration<Shift>
     {
         b.Property(s => s.Location).HasMaxLength(200).IsRequired();
         b.Property(s => s.Notes).HasMaxLength(1000);
-        b.HasOne(s => s.Doctor).WithMany(d => d.Shifts).HasForeignKey(s => s.DoctorId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne(s => s.Doctor).WithMany(d => d.Shifts).HasForeignKey(s => s.DoctorId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(s => new { s.DoctorId, s.StartTime }).IncludeProperties(s => s.EndTime);
         b.HasIndex(s => new { s.StartTime, s.EndTime });
     }
